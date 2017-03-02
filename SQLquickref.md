@@ -1,7 +1,21 @@
 # SQL quick Reference
 
+Contents:
+
+- [ARPU](#ARPU)
+- [6 Months Back](#6 Months Back)
+
+
+
+
+
+
+
+
 
 ## Code Bits
+
+<a name="ARPU"/>
 
 ### ARPU
 /* Customers ARPU spending > R1000 in the last 6 months */
@@ -24,50 +38,54 @@ from ARPU a
   join fac.CustomerProfiling cp
     on cd.iCoId = cp.iCoId
 where a.ARPU >= 1000 and cd.sStatus in ('a','s') and cp.sSegments = 'Consumer'
+-----------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
+
+<a name="6 Months Back"/>
+
+### 6 Months Back
+Eerstens, om die begin van die huidige maand te kry:
+ 
+	select dateadd(mm, datediff(mm, 0, getdate()), 0)
+ 
+Wat die kode hierbo doen is dit kry die verskil in maande vanaf 0 tot vandag se datum. Daarna add dit daardie hoeveelheid maande weer terug by 0. Dit gee die eerste dag van die huidige maand. As jy 0 ingee gebruik SQL se interne default begin datum om die berekening te doen. Jy kan iets soos ‘1900-01-01’ ook gebruik, maar hierdie is veiliger in meeste gevalle.
+ 
+Tweedens gaan ons 6 maande aftrek:
+ 
+	select dateadd(mm, datediff(mm, 0, getdate())-6, 0)
+ 
+Dit gee hierdie maand dan nou 2014-03-01 en volgende maand sal dit 2014-04-01 gee en so aan. In plaas daarvan om die hoeveelheid maande net so by 0 te tel trek ons eers 6 af.
+ 
+Laastens convert ons dit dan na ‘n datum formaat wat pas by die een in die table en gooi als behalwe die eerste 6 karakters weg:
+ 
+	select convert(varchar(6), dateadd(mm, datediff(mm, 0, getdate())-6, 0), 112)
+ 
+Dit bring die 201403 terug wat jy soek. Dan verander ons die vaste “201402” van jou query met die expression hierbo:
+ 
+	 
+	SELECT 
+	       [COID]
+	      ,[Period]
+	      ,[ARPU]
+	      ,[CTAmount]
+	      ,[Retention]
+	      ,[ServicedAutopage]
+	      ,[ServicedPartner]
+	      ,RET_CHL1 = Ret.sCustomerLevel1
+	      ,RET_CHL2 = Ret.sCustomerLevel2
+	      ,RET_DEALER = Ret.sDealerName
+	      ,RET_DEALERC = Ret.sDealercode
+	      ,ACQ_CHL1 = Acq.sCustomerLevel1
+	      ,ACQ_CHL2 = Acq.sCustomerLevel2
+	      ,ACQ_DEALER = Acq.sDealerName
+	      ,ACQ_DEALERC = Acq.sDealercode
+	  FROM [Comms].[ContractElements]
+	 
+	  LEFT JOIN DW.dim.PartnerListNew as Acq ON Acq.iDealerID = Comms.ContractElements.DealerID 
+	  LEFT JOIN DW.dim.PartnerListNew as Ret ON Ret.iDealerID = Comms.ContractElements.RETDealerID 
+	 
+	  WHERE ([Comms].[ContractElements].[Period] > convert(varchar(6), dateadd(mm, datediff(mm, 0, getdate())-6, 0), 112) ) and (Retention = 1)
 
 
-
-
-
-
-+ bind a value to a symbol
-  - get search list: `search()`
-  - search the global environment for symbol name 
-  - then search the namespaces of each package
-+ search list
-  - global environment first and base package last
-  - order by the order of loading library positioning after global environment
-  - R has separate namespaces for functions and non-functions
-
-### rules
-  + determine how a value is associated with a free variable in a function
-  + R uses lexical scoping or static scoping
-
-### lexical scoping
-  + `f <- function(x,y){ x+y/z }`
-  + z is free variable, not formal arguments nor local variable
-  + values of free variables are searched for in the environment in which the function is defined
-
-### dynamic scoping
-  + value of variable is looked up in the environment from which the function is called
-  + calling environment in R: parent frame
-  + when function defined and called in global environment, defining and calling environment are the same
-  
-### environment
-  + basic
-    - a collection of (symbol, value) pairs
-    - every environment has a parent environment
-    - environment can have multiple children
-    - only environment without a parent is the empty environment
-    - function+its environment = a closure or function closure
-  + information
-    - get function's environment: `ls(environment(function))`
-    - get value of variable in environment: `get("variable name", environment(function))`
-    
-### searching for free variable
-  + if not found in the environment where function defined, search for parent environment
-  + search continues until hit the top-level environment, usually the global environment or the namespace of a package
-  + after top-level environment, continue to search until hit the empty environment
-  + if still not found, throw an error
 
 
